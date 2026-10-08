@@ -1,0 +1,12 @@
+textacy
+spacy
+gensim
+scikit-learn
+pandas
+numpy
+matplotlib
+seaborn
+streamlit
+joblib
+jupyter
+ipykernel
