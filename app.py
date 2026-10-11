@@ -3,6 +3,7 @@
 from pathlib import Path
 
 import joblib
+import altair as alt
 import pandas as pd
 import streamlit as st
 
@@ -80,23 +81,24 @@ if st.button("Classify"):
 
         probability_table = pd.DataFrame(
             {
-                "Issue area": [label_name(label) for label in classes],
-                "Probability (%)": probabilities * 100,
+                "Class": [label_name(label) for label in classes],
+                "Probability": probabilities,
             }
-        )
-        predicted_name = label_name(prediction)
-        probability_table["Predicted first"] = (
-            probability_table["Issue area"] == predicted_name
-        )
-        probability_table = (
-            probability_table.sort_values(
-                ["Predicted first", "Probability (%)"],
-                ascending=[False, False],
-            )
-            .drop(columns="Predicted first")
-            .head(5)
-        )
-        probability_table = probability_table.set_index("Issue area")
+        ).sort_values("Probability", ascending=False).head(5)
 
         st.subheader("Top 5 predicted class probabilities")
-        st.bar_chart(probability_table)
+        chart = (
+            alt.Chart(probability_table)
+            .mark_bar()
+            .encode(
+                x=alt.X(
+                    "Class:N",
+                    sort=None,
+                    title=None,
+                    axis=alt.Axis(labelAngle=-30),
+                ),
+                y=alt.Y("Probability:Q", axis=alt.Axis(format="%")),
+                tooltip=["Class", "Probability"],
+            )
+        )
+        st.altair_chart(chart, use_container_width=True)
