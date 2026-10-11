@@ -81,7 +81,7 @@ TF-IDF performs best, while LDA and Doc2Vec are about tied.
 The commands below are for Windows PowerShell and Python 3.11.
 
 ```powershell
-git clone <repository-url>
+git clone https://github.com/gowth139am-lab/legal-text-classification.git
 cd legal-text-classification
 python -m venv venv
 venv\Scripts\activate
@@ -163,8 +163,8 @@ predicted class probabilities.
 
 | Name | GitHub username |
 |---|---|
-| TEAM MEMBER 1 | TEAM MEMBER 1 |
-| TEAM MEMBER 2 | TEAM MEMBER 2 |
+| GOWTHAM S | gowth139am-lab |
+| Harsh VenkatSai Kalekar| HarshKalekar |
 
 ## Reference
 
