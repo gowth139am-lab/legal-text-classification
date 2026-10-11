@@ -226,5 +226,4 @@ models/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep
 !models/.gitkeep
-results/*
 !results/.gitkeep

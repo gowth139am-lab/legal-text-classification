@@ -1,0 +1,5 @@
+{
+  "model": "doc2vec_logistic_regression",
+  "accuracy": 0.6301369863013698,
+  "macro_f1": 0.5388455655395794
+}

@@ -1,0 +1,5 @@
+{
+  "model": "lda_logistic_regression",
+  "accuracy": 0.631328171530673,
+  "macro_f1": 0.5222284217358948
+}
