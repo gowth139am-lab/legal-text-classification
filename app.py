@@ -1,41 +1,102 @@
-"""Small Streamlit demo for topic prediction and Doc2Vec similarity search."""
+"""Streamlit interface for classifying Supreme Court opinions."""
 
 from pathlib import Path
 
 import joblib
+import pandas as pd
 import streamlit as st
-from gensim.models.doc2vec import Doc2Vec
 
-from src.data import PROJECT_ROOT, load_dataset, tokenize
+from src.preprocess import ISSUE_AREA_NAMES, clean_text
 
 
-st.set_page_config(page_title="Supreme Court Topic Classifier", layout="wide")
+PROJECT_ROOT = Path(__file__).resolve().parent
+MODEL_PATH = PROJECT_ROOT / "models" / "baseline.joblib"
+TEST_DATA_PATH = PROJECT_ROOT / "data" / "processed" / "test.csv"
+
+
+@st.cache_resource
+def load_model():
+    """Load the trained baseline model once per Streamlit process."""
+    if not MODEL_PATH.exists():
+        raise FileNotFoundError(f"Baseline model not found: {MODEL_PATH}")
+    return joblib.load(MODEL_PATH)
+
+
+@st.cache_data
+def load_test_data() -> pd.DataFrame:
+    """Load the test data once and cache it between reruns."""
+    if not TEST_DATA_PATH.exists():
+        raise FileNotFoundError(f"Test data not found: {TEST_DATA_PATH}")
+    return pd.read_csv(TEST_DATA_PATH)
+
+
+def label_name(label: int) -> str:
+    """Return a readable issue-area name for a model label."""
+    return ISSUE_AREA_NAMES.get(int(label), str(label))
+
+
+st.set_page_config(page_title="Supreme Court Opinion Classifier", layout="wide")
 st.title("Supreme Court Opinion Classifier")
-st.caption("TF-IDF + Logistic Regression with optional Doc2Vec similarity search")
 
-model_path = PROJECT_ROOT / "models" / "baseline_issue_area.joblib"
-if not model_path.exists():
-    st.warning("Train the baseline first: python src/train_baseline.py")
+try:
+    model = load_model()
+    test_data = load_test_data()
+except FileNotFoundError as error:
+    st.error(str(error))
     st.stop()
 
-model = joblib.load(model_path)
-text = st.text_area("Paste an opinion or legal passage", height=240)
-if st.button("Predict topic") and text.strip():
-    st.success(f"Predicted issue area: {model.predict([text])[0]}")
+if "opinion_text" not in st.session_state:
+    st.session_state.opinion_text = ""
+if "random_true_label" not in st.session_state:
+    st.session_state.random_true_label = None
 
-st.subheader("Similar opinions")
-doc2vec_path = PROJECT_ROOT / "models" / "doc2vec_issue_area.model"
-if doc2vec_path.exists() and text.strip():
-    d2v = Doc2Vec.load(str(doc2vec_path))
-    data = load_dataset()
-    vector = d2v.infer_vector(tokenize(text))
-    scores = [
-        (float(score), data.iloc[index]["text"])
-        for index, score in enumerate(d2v.dv.cosine_similarities(vector, d2v.dv.vectors))
-        if index < len(data)
-    ]
-    for score, opinion in sorted(scores, reverse=True)[:3]:
-        st.write(f"**Similarity: {score:.3f}**")
-        st.write(opinion[:700] + "...")
-else:
-    st.info("Train Doc2Vec and enter text to see similar opinions.")
+if st.button("Load random test case"):
+    random_case = test_data.sample(n=1).iloc[0]
+    st.session_state.opinion_text = random_case["text"]
+    st.session_state.random_true_label = random_case["issue_area"]
+
+opinion_text = st.text_area(
+    "Paste an opinion",
+    key="opinion_text",
+    height=300,
+)
+
+if st.session_state.random_true_label is not None:
+    st.caption(
+        "True issue area: "
+        f"{label_name(st.session_state.random_true_label)}"
+    )
+
+if st.button("Classify"):
+    cleaned_opinion = clean_text(opinion_text)
+    if not cleaned_opinion:
+        st.warning("Please enter an opinion before classifying.")
+    else:
+        prediction = model.predict([cleaned_opinion])[0]
+        probabilities = model.predict_proba([cleaned_opinion])[0]
+        classes = model.classes_
+
+        st.success(f"Predicted issue area: {label_name(prediction)}")
+
+        probability_table = pd.DataFrame(
+            {
+                "Issue area": [label_name(label) for label in classes],
+                "Probability (%)": probabilities * 100,
+            }
+        )
+        predicted_name = label_name(prediction)
+        probability_table["Predicted first"] = (
+            probability_table["Issue area"] == predicted_name
+        )
+        probability_table = (
+            probability_table.sort_values(
+                ["Predicted first", "Probability (%)"],
+                ascending=[False, False],
+            )
+            .drop(columns="Predicted first")
+            .head(5)
+        )
+        probability_table = probability_table.set_index("Issue area")
+
+        st.subheader("Top 5 predicted class probabilities")
+        st.bar_chart(probability_table)
