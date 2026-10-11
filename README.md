@@ -163,8 +163,10 @@ predicted class probabilities.
 
 | Name | GitHub username |
 |---|---|
-| TEAM MEMBER 1 | TEAM MEMBER 1 |
-| TEAM MEMBER 2 | TEAM MEMBER 2 |
+| GOWTHAM S | gowth139am-lab |
+| Harsh VenkatSai Kalekar
+<img width="81" height="25" alt="image" src="https://github.com/user-attachments/assets/d8d13887-0198-4174-9ce7-085fa0258727" />
+ | Harsh Kalekar |
 
 ## Reference
 
